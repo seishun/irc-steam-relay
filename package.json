@@ -1,0 +1,8 @@
+{
+  "name": "irc-steam-relay",
+  "version": "0.0.1",
+  "dependencies": {
+    "irc": "*",
+    "steam": "git://github.com/seishun/node-steam.git"
+  }
+}
