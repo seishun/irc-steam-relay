@@ -1,11 +1,25 @@
+var Steam = require('steamkit');
+
 module.exports = function(details) {
-  var steam = new (require('steamkit'))(details.username, details.password);
   var irc = new (require('irc')).Client(details.server, details.nick, {
     channels: [details.channel]
   });
   
-  steam.on('loggedOn', function() {
-    steam.changeStatus(1);
+  var steam = new Steam.SteamClient();
+  steam.connect();
+  
+  steam.on('connected', function() {
+    steam.logOn(details.username, details.password);
+  });
+  
+  steam.on('loggedOn', function(result) {
+    if (result != Steam.EResult.OK) {
+      console.log("Logon error:", result);
+      // TODO: auto-retry for temporary errors
+      return;
+    }
+    
+    steam.setPersonaState(Steam.EPersonaState.Online);
     steam.joinChat(details.chatroom);
     
     irc.on('message' + details.channel, function(from, message) {
@@ -32,9 +46,9 @@ module.exports = function(details) {
   });
   
   steam.on('chatMsg', function(chatter, message, chatRoom, msgType) {
-    if (msgType == 1) { // ChatMsg
+    if (msgType == Steam.EChatEntryType.ChatMsg) { // ChatMsg
       irc.say(details.channel, '<' + steam.getFriendPersonaName(chatter) + '> ' + message);
-    } else if (msgType == 4) { // Emote
+    } else if (msgType == Steam.EChatEntryType.Emote) { // Emote
       irc.say(details.channel, steam.getFriendPersonaName(chatter) + ' ' + message);
     }
   });
@@ -57,5 +71,14 @@ module.exports = function(details) {
     
   steam.on('banned', function(bannee, chat, banner) {
     irc.say(details.channel, steam.getFriendPersonaName(bannee) + ' was banned by ' + steam.getFriendPersonaName(banner));
+  });
+  
+  steam.on('loggedOff', function(result) {
+    console.log("Logged off:", result);
+  });
+  
+  steam.on('disconnected', function() {
+    console.log('Disconnected! Reconnecting...');
+    steam.connect();
   });
 };
