@@ -6,18 +6,14 @@ module.exports = function(details) {
   });
   
   var steam = new Steam.SteamClient();
-  steam.connect();
+  steam.logOn(details.username, details.password);
   
   steam.on('connected', function() {
-    steam.logOn(details.username, details.password);
+    console.log('Connected!');
   });
   
   steam.on('loggedOn', function(result) {
-    if (result != Steam.EResult.OK) {
-      console.log("Logon error:", result);
-      // TODO: auto-retry for temporary errors
-      return;
-    }
+    console.log('Logged on!');
     
     steam.setPersonaState(Steam.EPersonaState.Online);
     steam.joinChat(details.chatroom);
@@ -46,9 +42,9 @@ module.exports = function(details) {
   });
   
   steam.on('chatMsg', function(chatter, message, chatRoom, msgType) {
-    if (msgType == Steam.EChatEntryType.ChatMsg) { // ChatMsg
+    if (msgType == Steam.EChatEntryType.ChatMsg) {
       irc.say(details.channel, '<' + steam.getFriendPersonaName(chatter) + '> ' + message);
-    } else if (msgType == Steam.EChatEntryType.Emote) { // Emote
+    } else if (msgType == Steam.EChatEntryType.Emote) {
       irc.say(details.channel, steam.getFriendPersonaName(chatter) + ' ' + message);
     }
   });
@@ -77,8 +73,5 @@ module.exports = function(details) {
     console.log("Logged off:", result);
   });
   
-  steam.on('disconnected', function() {
-    console.log('Disconnected! Reconnecting...');
-    steam.connect();
-  });
+  steam.on('debug', console.log);
 };
