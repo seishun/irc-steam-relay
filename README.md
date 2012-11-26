@@ -15,6 +15,7 @@ Usage
     relay({
       username: /* your Steam account name */,
       password: /* your Steam account password */,
+      authCode: /* Steam Guard authentication code */,
       chatroom: /* the 64-bit SteamID of the group as a decimal string - go to the group's page, press Ctrl+U and search for "joinchat" */,
       server: /* IRC server to connect to */,
       nick: /* nickname to use on IRC */,

@@ -6,7 +6,7 @@ module.exports = function(details) {
   });
   
   var steam = new Steam.SteamClient();
-  steam.logOn(details.username, details.password);
+  steam.logOn(details.username, details.password, details.authCode);
   
   steam.on('connected', function() {
     console.log('Connected!');
