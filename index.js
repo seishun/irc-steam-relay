@@ -1,4 +1,4 @@
-var Steam = require('steamkit');
+var Steam = require('steam');
 
 module.exports = function(details) {
   var irc = new (require('irc')).Client(details.server, details.nick, {
