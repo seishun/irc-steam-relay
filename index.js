@@ -19,29 +19,29 @@ module.exports = function(details) {
     steam.joinChat(details.chatroom);
     
     irc.on('message' + details.channel, function(from, message) {
-      steam.sendChatRoomMessage(details.chatroom, '<' + from + '> ' + message);
+      steam.sendMessage(details.chatroom, '<' + from + '> ' + message);
     });
     
     irc.on('action', function(from, to, message) {
       if (to == details.channel) {
-        steam.sendChatRoomMessage(details.chatroom, from + ' ' + message);
+        steam.sendMessage(details.chatroom, from + ' ' + message);
       }
     });
     
     irc.on('join' + details.channel, function(nick) {
-      steam.sendChatRoomMessage(details.chatroom, nick + ' has joined ' + details.channel);
+      steam.sendMessage(details.chatroom, nick + ' has joined ' + details.channel);
     });
     
     irc.on('part' + details.channel,  function(nick) {
-      steam.sendChatRoomMessage(details.chatroom, nick + ' has left ' + details.channel);
+      steam.sendMessage(details.chatroom, nick + ' has left ' + details.channel);
     });
     
     irc.on('quit',  function(nick, reason) {
-      steam.sendChatRoomMessage(details.chatroom, nick + ' has quit (' + reason + ')');
+      steam.sendMessage(details.chatroom, nick + ' has quit (' + reason + ')');
     });  
   });
   
-  steam.on('chatMsg', function(chatter, message, chatRoom, msgType) {
+  steam.on('chatMsg', function(chatRoom, message, msgType, chatter) {
     if (msgType == Steam.EChatEntryType.ChatMsg) {
       irc.say(details.channel, '<' + steam.getFriendPersonaName(chatter) + '> ' + message);
     } else if (msgType == Steam.EChatEntryType.Emote) {
