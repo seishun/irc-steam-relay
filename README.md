@@ -23,3 +23,5 @@ Usage
     });
 
 There's no API, just a function that does everything.
+
+If you are a moderator in the Steam chat, you can kick people from the IRC channel using '.k'. If you're an officer, you can additionally ban and unban using '.kb' and '.unban' respectively. If you are an operator in the IRC channel, you can do all of the above to the Steam chat room.

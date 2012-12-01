@@ -1,8 +1,8 @@
 {
   "name": "irc-steam-relay",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "dependencies": {
     "irc": "*",
-    "steam": "0.2.x"
+    "steam": "0.3.x"
   }
 }
