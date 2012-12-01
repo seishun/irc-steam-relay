@@ -22,7 +22,7 @@ module.exports = function(details) {
       steam.sendMessage(details.chatroom, '<' + from + '> ' + message);
       
       var parts = message.match(/(\S+)\s+(.*\S)/);
-      if (['.k', '.kb', '.unban'].indexOf(parts[1]) == -1)
+      if (!parts || ['.k', '.kb', '.unban'].indexOf(parts[1]) == -1)
         return;
       
       irc.whois(from, function(info) {
