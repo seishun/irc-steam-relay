@@ -86,16 +86,16 @@ module.exports = function(details) {
     }
     
     var parts = message.split(/\s+/);
-    var status = steam.chatRooms[chatRoom][chatter];
+    var permissions = steam.chatRooms[chatRoom][chatter].permissions;
     
-    if (parts[0] == '.k' && status !== '') { // moderator, officer or owner
+    if (parts[0] == '.k' && permissions & Steam.EChatPermission.Kick) {
       irc.send('KICK', details.channel, parts[1], 'requested by ' + name);
       
-    } else if (parts[0] == '.kb' && (status == 'officer' || status == 'owner')) {
+    } else if (parts[0] == '.kb' && permissions & Steam.EChatPermission.Ban) {
       irc.send('MODE', details.channel, '+b', parts[1]);
       irc.send('KICK', details.channel, parts[1], 'requested by ' + name);
       
-    } else if (parts[0] == '.unban' && (status == 'officer' || status == 'owner')) {
+    } else if (parts[0] == '.unban' && permissions & Steam.EChatPermission.Ban) {
       irc.send('MODE', details.channel, '-b', parts[1]);
     }
   });

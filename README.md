@@ -6,12 +6,12 @@ Relays messages between a Steam chat room and an IRC channel using [node-irc](ht
 Installation
 -------------
 
-    git clone git://github.com/seishun/irc-steam-relay.git && cd irc-steam-relay && npm install
+    npm install git://github.com/seishun/irc-steam-relay.git
 
 Usage
 -----
 
-    var relay = require('./irc-steam-relay');
+    var relay = require('irc-steam-relay');
     relay({
       username: /* your Steam account name */,
       password: /* your Steam account password */,
@@ -24,4 +24,4 @@ Usage
 
 There's no API, just a function that does everything.
 
-If you are a moderator in the Steam chat, you can kick people from the IRC channel using '.k'. If you're an officer, you can additionally ban and unban using '.kb' and '.unban' respectively. If you are an operator in the IRC channel, you can do all of the above to the Steam chat room.
+You can use '.k', '.kb' and '.unban' commands to kick, (kick)ban and unban across Steam and IRC. The command won't trigger if the user doesn't have ops (for IRC->Steam) or the appropriate chat room permission (for Steam->IRC).
