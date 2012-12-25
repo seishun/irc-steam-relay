@@ -5,6 +5,10 @@ module.exports = function(details) {
     channels: [details.channel]
   });
   
+  irc.on('error', function(err) {
+    console.log('IRC error: ' + err);
+  });
+  
   var steam = new Steam.SteamClient();
   steam.logOn(details.username, details.password, require('fs').existsSync('sentry') ? require('fs').readFileSync('sentry') : details.authCode);
   
