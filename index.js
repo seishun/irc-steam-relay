@@ -6,7 +6,7 @@ module.exports = function(details) {
   });
   
   var steam = new Steam.SteamClient();
-  steam.logOn(details.username, details.password, details.authCode);
+  steam.logOn(details.username, details.password, require('fs').existsSync('sentry') ? require('fs').readFileSync('sentry') : details.authCode);
   
   steam.on('connected', function() {
     console.log('Connected!');
@@ -123,6 +123,10 @@ module.exports = function(details) {
   steam.on('loggedOff', function(result) {
     console.log("Logged off:", result);
   });
+  
+  steam.on('sentry', function(data) {
+    require('fs').writeFileSync('sentry', data);
+  })
   
   steam.on('debug', console.log);
 };
