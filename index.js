@@ -6,11 +6,11 @@ module.exports = function(details) {
   });
   
   irc.on('error', function(err) {
-    console.log('IRC error: ' + err);
+    console.log('IRC error: ', err);
   });
   
   var steam = new Steam.SteamClient();
-  steam.logOn(details.username, details.password, require('fs').existsSync('sentry') ? require('fs').readFileSync('sentry') : details.authCode);
+  steam.logOn(details.username, details.password, details.authCode || require('fs').existsSync('sentry') && require('fs').readFileSync('sentry'));
   
   steam.on('connected', function() {
     console.log('Connected!');
@@ -26,23 +26,29 @@ module.exports = function(details) {
       steam.sendMessage(details.chatroom, '<' + from + '> ' + message);
       
       var parts = message.match(/(\S+)\s+(.*\S)/);
-      if (!parts || ['.k', '.kb', '.unban'].indexOf(parts[1]) == -1)
-        return;
       
-      irc.whois(from, function(info) {
-        if (info.channels.indexOf('@' + details.channel) == -1)
-          return; // not OP, go away
-        
-        Object.keys(steam.users).filter(function(user) {
-          return steam.users[user].playerName == parts[2];
-        }).forEach(function(user) {
-          steam[{
-            '.k': 'kick',
-            '.kb': 'ban',
-            '.unban': 'unban'
-          }[parts[1]]](details.chatroom, user);
+      var triggers = {
+        '.k': 'kick',
+        '.kb': 'ban',
+        '.unban': 'unban'
+      };
+      
+      if (parts && parts[1] in triggers) {      
+        irc.whois(from, function(info) {
+          if (info.channels.indexOf('@' + details.channel) == -1)
+            return; // not OP, go away
+          
+          Object.keys(steam.users).filter(function(steamID) {
+            return steam.users[steamID].playerName == parts[2];
+          }).forEach(function(steamID) {
+            steam[triggers[parts[1]]](details.chatroom, steamID);
+          });
         });
-      });
+      } else if (message.trim() == '.userlist') {
+        Object.keys(steam.chatRooms[details.chatroom]).forEach(function(steamID) {
+          irc.notice(from, steam.users[steamID].playerName + ' http://steamcommunity.com/profiles/' + steamID);
+        });
+      }
     });
     
     irc.on('action', function(from, to, message) {
@@ -101,6 +107,14 @@ module.exports = function(details) {
       
     } else if (parts[0] == '.unban' && permissions & Steam.EChatPermission.Ban) {
       irc.send('MODE', details.channel, '-b', parts[1]);
+      
+    } else if (parts[0] == '.userlist') {
+      irc.send('NAMES', details.channel);
+      irc.once('names' + details.channel, function(nicks) {
+        steam.sendMessage(chatter, 'Users in ' + details.channel + ':\n' + Object.keys(nicks).map(function(key) {
+          return nicks[key] + key;
+        }).join('\n'));
+      });
     }
   });
   
