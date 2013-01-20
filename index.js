@@ -119,7 +119,7 @@ module.exports = function(details) {
   });
   
   steam.on('chatStateChange', function(stateChange, chatterActedOn, chat, chatterActedBy) {
-    var name = steam.users[chatterActedOn].playerName;
+    var name = steam.users[chatterActedOn].playerName + ' (http://steamcommunity.com/profiles/' + chatterActedOn + ')';
     switch (stateChange) {
       case Steam.EChatMemberStateChange.Entered:
         irc.say(details.channel, name + ' entered chat.');
