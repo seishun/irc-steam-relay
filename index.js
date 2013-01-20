@@ -1,6 +1,11 @@
 var Steam = require('steam');
 
 module.exports = function(details) {
+  var msgFormat = details.msgFormat || '\u000302%s\u000f: %s';
+  var emoteFormat = details.emoteFormat || '\u000302%s %s';
+  var msgFormatGame = details.msgFormatGame || details.msgFormat || '\u000303%s\u000f: %s';
+  var emoteFormatGame = details.emoteFormatGame || details.emoteFormat || '\u000303%s %s'; 
+  
   var irc = new (require('irc')).Client(details.server, details.nick, {
     channels: [details.channel]
   });
@@ -87,12 +92,12 @@ module.exports = function(details) {
   });
   
   steam.on('chatMsg', function(chatRoom, message, msgType, chatter) {
-    var color = '\u0003' + (steam.users[chatter].gameName ? '03' : '02');
+    var game = steam.users[chatter].gameName;
     var name = steam.users[chatter].playerName;
     if (msgType == Steam.EChatEntryType.ChatMsg) {
-      irc.say(details.channel, color + name + '\u000f: ' + message);
+      irc.say(details.channel, require('util').format(game ? msgFormatGame : msgFormat, name, message));
     } else if (msgType == Steam.EChatEntryType.Emote) {
-      irc.say(details.channel, color + name + ' ' + message);
+      irc.say(details.channel, require('util').format(game ? emoteFormatGame : emoteFormat, name, message));
     }
     
     var parts = message.split(/\s+/);
