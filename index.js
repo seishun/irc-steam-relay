@@ -1,4 +1,10 @@
 var Steam = require('steam');
+var fs = require('fs');
+
+// if we've saved a server list, use it
+if (fs.existsSync('servers')) {
+  Steam.servers = JSON.parse(fs.readFileSync('servers'));
+}
 
 module.exports = function(details) {
   var msgFormat = details.msgFormat || '\u000302%s\u000f: %s';
@@ -17,8 +23,8 @@ module.exports = function(details) {
   var steam = new Steam.SteamClient();
   steam.logOn(details.username, details.password, details.authCode || require('fs').existsSync('sentry') && require('fs').readFileSync('sentry'));
   
-  steam.on('connected', function() {
-    console.log('Connected!');
+  steam.on('servers', function(servers) {
+    fs.writeFile('servers', JSON.stringify(servers));
   });
   
   steam.on('loggedOn', function(result) {
