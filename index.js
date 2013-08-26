@@ -21,7 +21,12 @@ module.exports = function(details) {
   });
   
   var steam = new Steam.SteamClient();
-  steam.logOn(details.username, details.password, details.authCode || require('fs').existsSync('sentry') && require('fs').readFileSync('sentry'));
+  steam.logOn({
+    accountName: details.username,
+    password: details.password,
+    authCode: details.authCode,
+    shaSentryfile: require('fs').existsSync('sentry') ? require('fs').readFileSync('sentry') : undefined
+  });
   
   steam.on('servers', function(servers) {
     fs.writeFile('servers', JSON.stringify(servers));
