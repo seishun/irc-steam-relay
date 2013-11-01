@@ -12,12 +12,88 @@ module.exports = function(details) {
   var msgFormatGame = details.msgFormatGame || details.msgFormat || '\u000303%s\u000f: %s';
   var emoteFormatGame = details.emoteFormatGame || details.emoteFormat || '\u000303%s %s'; 
   
+  var queue = [];
+  
+  function sendMessage(msg) {
+    if (steam.loggedOn) {
+      steam.sendMessage(details.chatroom, msg);
+    } else {
+      queue.push(msg);
+    }
+  }
+  
   var irc = new (require('irc')).Client(details.server, details.nick, {
     channels: [details.channel]
   });
   
   irc.on('error', function(err) {
     console.log('IRC error: ', err);
+  });
+  
+  irc.on('message' + details.channel, function(from, message) {
+    sendMessage('<' + from + '> ' + message);
+    
+    if (!steam.loggedOn)
+      return;
+    
+    var parts = message.match(/(\S+)\s+(.*\S)/);
+    
+    var triggers = {
+      '.k': 'kick',
+      '.kb': 'ban',
+      '.unban': 'unban'
+    };
+    
+    if (parts && parts[1] in triggers) {
+      irc.whois(from, function(info) {
+        if (info.channels.indexOf('@' + details.channel) == -1)
+          return; // not OP, go away
+        
+        Object.keys(steam.users).filter(function(steamID) {
+          return steam.users[steamID].playerName == parts[2];
+        }).forEach(function(steamID) {
+          steam[triggers[parts[1]]](details.chatroom, steamID);
+        });
+      });
+    } else if (message.trim() == '.userlist') {
+      Object.keys(steam.chatRooms[details.chatroom]).forEach(function(steamID) {
+        irc.notice(from, steam.users[steamID].playerName + ' http://steamcommunity.com/profiles/' + steamID);
+      });
+    }
+  });
+  
+  irc.on('action', function(from, to, message) {
+    if (to == details.channel) {
+      sendMessage(from + ' ' + message);
+    }
+  });
+  
+  irc.on('+mode', function(channel, by, mode, argument, message) {
+    if (channel == details.channel && mode == 'b') {
+      sendMessage(by + ' sets ban on ' + argument);
+    }
+  });
+  
+  irc.on('-mode', function(channel, by, mode, argument, message) {
+    if (channel == details.channel && mode == 'b') {
+      sendMessage(by + ' removes ban on ' + argument);
+    }
+  });
+  
+  irc.on('kick' + details.channel, function(nick, by, reason, message) {
+    sendMessage(by + ' has kicked ' + nick + ' from ' + details.channel + ' (' + reason + ')');
+  });
+  
+  irc.on('join' + details.channel, function(nick) {
+    sendMessage(nick + ' has joined ' + details.channel);
+  });
+  
+  irc.on('part' + details.channel, function(nick) {
+    sendMessage(nick + ' has left ' + details.channel);
+  });
+  
+  irc.on('quit', function(nick, reason) {
+    sendMessage(nick + ' has quit (' + reason + ')');
   });
   
   var steam = new Steam.SteamClient();
@@ -38,68 +114,8 @@ module.exports = function(details) {
     steam.setPersonaState(Steam.EPersonaState.Online);
     steam.joinChat(details.chatroom);
     
-    irc.on('message' + details.channel, function(from, message) {
-      steam.sendMessage(details.chatroom, '<' + from + '> ' + message);
-      
-      var parts = message.match(/(\S+)\s+(.*\S)/);
-      
-      var triggers = {
-        '.k': 'kick',
-        '.kb': 'ban',
-        '.unban': 'unban'
-      };
-      
-      if (parts && parts[1] in triggers) {      
-        irc.whois(from, function(info) {
-          if (info.channels.indexOf('@' + details.channel) == -1)
-            return; // not OP, go away
-          
-          Object.keys(steam.users).filter(function(steamID) {
-            return steam.users[steamID].playerName == parts[2];
-          }).forEach(function(steamID) {
-            steam[triggers[parts[1]]](details.chatroom, steamID);
-          });
-        });
-      } else if (message.trim() == '.userlist') {
-        Object.keys(steam.chatRooms[details.chatroom]).forEach(function(steamID) {
-          irc.notice(from, steam.users[steamID].playerName + ' http://steamcommunity.com/profiles/' + steamID);
-        });
-      }
-    });
-    
-    irc.on('action', function(from, to, message) {
-      if (to == details.channel) {
-        steam.sendMessage(details.chatroom, from + ' ' + message);
-      }
-    });
-    
-    irc.on('+mode', function(channel, by, mode, argument, message) {
-      if (channel == details.channel && mode == 'b') {
-        steam.sendMessage(details.chatroom, by + ' sets ban on ' + argument);
-      }
-    });
-    
-    irc.on('-mode', function(channel, by, mode, argument, message) {
-      if (channel == details.channel && mode == 'b') {
-        steam.sendMessage(details.chatroom, by + ' removes ban on ' + argument);
-      }
-    });
-    
-    irc.on('kick' + details.channel, function(nick, by, reason, message) {
-      steam.sendMessage(details.chatroom, by + ' has kicked ' + nick + ' from ' + details.channel + ' (' + reason + ')');
-    });
-    
-    irc.on('join' + details.channel, function(nick) {
-      steam.sendMessage(details.chatroom, nick + ' has joined ' + details.channel);
-    });
-    
-    irc.on('part' + details.channel, function(nick) {
-      steam.sendMessage(details.chatroom, nick + ' has left ' + details.channel);
-    });
-    
-    irc.on('quit', function(nick, reason) {
-      steam.sendMessage(details.chatroom, nick + ' has quit (' + reason + ')');
-    });
+    queue.forEach(sendMessage);
+    queue = [];
   });
   
   steam.on('chatMsg', function(chatRoom, message, msgType, chatter) {
